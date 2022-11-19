@@ -32,10 +32,9 @@ contract TokenFix {
             revert('Swap amount exceeds balance');
         }
 
-        IERC20(oldToken).safeTransfer(address.this, swapAmount);
+        oldToken.safeTransferFrom(oldToken, msg.sender, address.this, swapAmount);
 
-        IERC20(newToken).safeTransfer(msg.sender, swapAmount);
-    }
+        newToken.safeTransferFrom(newToken, address.this, msg.sender, swapAmount);
 
     function approve(address tokenAddress) public {
         IERC20(tokenAddress).approve(address.this, uint256(-1));
