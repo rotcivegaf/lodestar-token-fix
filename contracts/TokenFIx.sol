@@ -1,46 +1,67 @@
 pragma solidity 0.8.10;
-
-// Import the IERC20 interface and and SafeMath library
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-contract TokenFix {
+contract TokenFix is ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    // Contract state: exchange rate and token
     IERC20 public oldToken;
     IERC20 public newToken;
+    address public admin;
 
-    constructor(IERC20 _oldToken, IERC20 _newToken) {
+    event tokenClaimed (address claimer, uint256 claimAmount);
+    event adminUpdated (address oldAdmin, address newAdmin);
+
+    constructor(IERC20 _oldToken, IERC20 _newToken, address _admin) {
         oldToken = _oldToken;
         newToken = _newToken;
+        admin = _admin;
+    }
+
+
+    function swap (uint256 swapAmount) nonReentrant public {
+        swapInternal(swapAmount);
     }
 
     //@notice this function is to swap old tokens for new tokens at a 1:1 rate (?) 
-    function swap(uint256 swapAmount) public {
+    function swapInternal (uint256 swapAmount) internal {
         uint256 userBalance = IERC20(oldToken).balanceOf(msg.sender);
 
-        if (userBalance < swapAmount) {
+        if (swapAmount > userBalance) {
             revert('Swap amount exceeds balance');
         }
+
+        userBalance = userBalance - swapAmount;
 
         oldToken.safeTransferFrom(msg.sender, address(this), swapAmount);
 
         newToken.safeTransferFrom(address(this), msg.sender, swapAmount);
 
+        emit tokenClaimed (msg.sender, swapAmount);
+
     }
 
-    function approve(address tokenAddress) public {
-        uint256 allowance = 2**256 - 1;
+    //**ADMIN FUNCTIONS**
 
-        IERC20(tokenAddress).approve(address(this), allowance);
+    function _setAdmin (address _newAdmin) public {
+        require(msg.sender == admin, "Only the admin may update the admin");
+        address oldAdmin = admin;
+        admin = _newAdmin;
+        emit adminUpdated(oldAdmin, admin);
     }
 
-    // Initializer function (replaces constructor)
+    function _adminTransferAll () public {
+        require(msg.sender == admin, "Only the admin may transfer tokens out");
+        uint256 amount = newToken.balanceOf(address(this));
+        newToken.safeTransferFrom(address(this), msg.sender, amount);
+    }
 
-    // Send tokens back to the sender using predefined exchange rate
+    function _adminTransfer (uint256 amount) public {
+        require(msg.sender == admin, "Only the admin may transfer tokens out");
+        newToken.safeTransferFrom(address(this), msg.sender, amount);
+    }
     
 }
