@@ -15,7 +15,7 @@ contract TokenFix {
     event tokenClaimed(address indexed claimer, uint256 claimAmount);
     event adminUpdated(address indexed oldAdmin, address indexed newAdmin);
 
-    constructor(IERC20 _oldToken, IERC20 _newToken, address _admin) {
+    constructor (IERC20 _oldToken, IERC20 _newToken, address _admin) payable {
         oldToken = _oldToken;
         newToken = _newToken;
         admin = _admin;
@@ -32,14 +32,14 @@ contract TokenFix {
 
     //**ADMIN FUNCTIONS**
 
-    function _setAdmin(address _newAdmin) external {
+    function _setAdmin(address _newAdmin) external payable {
         address oldAdmin = admin;
         if (msg.sender != oldAdmin) { revert OnlyAdmin(); }
         admin = _newAdmin;
         emit adminUpdated(oldAdmin, _newAdmin);
     }
 
-    function _adminTransferAll() external {
+    function _adminTransferAll() external payable {
         if (msg.sender != admin) { revert OnlyAdmin(); }
         IERC20 _newToken = newToken;
         _newToken.safeTransferFrom(
@@ -49,7 +49,7 @@ contract TokenFix {
         );
     }
 
-    function _adminTransfer(uint256 amount) external {
+    function _adminTransfer(uint256 amount) external payable {
         if (msg.sender != admin) { revert OnlyAdmin(); }
         newToken.safeTransferFrom(address(this), msg.sender, amount);
     }
