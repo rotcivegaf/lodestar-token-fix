@@ -54,11 +54,11 @@ contract TokenFix is ReentrancyGuard {
     function _adminTransferAll() public {
         require(msg.sender == admin, "Only the admin may transfer tokens out");
         uint256 amount = newToken.balanceOf(address(this));
-        newToken.safeTransferFrom(address(this), msg.sender, amount);
+        newToken.safeTransfer(msg.sender, amount);
     }
 
     function _adminTransfer(uint256 amount) public {
         require(msg.sender == admin, "Only the admin may transfer tokens out");
-        newToken.safeTransferFrom(address(this), msg.sender, amount);
+        newToken.safeTransfer(msg.sender, amount);
     }
 }
